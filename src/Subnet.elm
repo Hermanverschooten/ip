@@ -1,7 +1,8 @@
 module Subnet exposing
     ( validate
     , fromCIDR, toCIDR
-    , base, hosts, inSubnet
+    , base, hosts
+    , included
     )
 
 {-| This library contains a number of functions for working with subnets.
@@ -33,24 +34,35 @@ toBits b =
     8 - truncate (logBase 2 (toFloat (256 - b)))
 
 
-toInt : String -> Int
-toInt ip =
-    case parts ip of
-        [ Just n1, Just n2, Just n3, Just n4 ] ->
-            (n1 * 256 ^ 3) + (n2 * 256 ^ 2) + (n3 * 256) + n4
+toInt : Maybe String -> Int
+toInt maybe_ip =
+    case maybe_ip of
+        Just ip ->
+            case parts ip of
+                [ Just n1, Just n2, Just n3, Just n4 ] ->
+                    (n1 * 256 ^ 3) + (n2 * 256 ^ 2) + (n3 * 256) + n4
 
-        _ ->
+                _ ->
+                    0
+
+        Nothing ->
             0
 
 
-toString : List Int -> String
+toString : List Int -> Maybe String
 toString p =
-    List.map (\i -> String.fromInt i) p
-        |> String.join "."
+    if List.length p == 4 then
+        Just
+            (List.map (\i -> String.fromInt i) p
+                |> String.join "."
+            )
+
+    else
+        Nothing
 
 
 
---- Public ---
+--- PUBLIC ---
 
 
 {-| Check to see if the given subnet is valid.
@@ -126,14 +138,14 @@ toCIDR subnet =
 
 {-| Returns the base IP of the given subnet.
 
-    base ("192.168.1.25", "255.255.255.0") == "192.168.1.0"
+    base ("192.168.1.25", "255.255.255.0") == Just "192.168.1.0"
 
-    base ("192.168.1.25:, "255.255.255.252") == "192.168.1.24"
+    base ("192.168.1.25:, "255.255.255.252") == Just "192.168.1.24"
 
-    base ("invalid ip", "or invalid subnet") == ""
+    base ("invalid ip", "or invalid subnet") == Nothing
 
 -}
-base : ( String, String ) -> String
+base : ( String, String ) -> Maybe String
 base ( ip, subnet ) =
     let
         calc : Int -> Int -> Int
@@ -165,23 +177,23 @@ base ( ip, subnet ) =
                     toString [ calc n i1, 0, 0, 0 ]
 
                 _ ->
-                    ""
+                    Nothing
 
         _ ->
-            ""
+            Nothing
 
 
 {-| Get the String representation for a given CIDR.
 
-    fromCIDR 24 == "255.255.255.0"
+    fromCIDR 24 == Just "255.255.255.0"
 
 -}
-fromCIDR : Int -> String
+fromCIDR : Int -> Maybe String
 fromCIDR cidr =
     let
         calc : Int -> Int
         calc cidr_ =
-            2 ^ (8 - modBy 8 cidr)
+            256 - (2 ^ (8 - modBy 8 cidr))
     in
     toString
         (case cidr // 8 of
@@ -189,13 +201,13 @@ fromCIDR cidr =
                 [ 255, 255, 255, calc cidr ]
 
             2 ->
-                [ 255, 255, modBy 8 cidr, 0 ]
+                [ 255, 255, calc cidr, 0 ]
 
             1 ->
-                [ 255, modBy 8 cidr, 0, 0 ]
+                [ 255, calc cidr, 0, 0 ]
 
             0 ->
-                [ modBy 8 cidr, 0, 0, 0 ]
+                [ calc cidr, 0, 0, 0 ]
 
             _ ->
                 []
@@ -219,13 +231,13 @@ hosts subnet =
 
 {-| Is the IP address in the subnet.
 
-    inSubnet ( "192.168.1.0", "255.255.255.0" ) "192.168.1.5" == True
+    included ( "192.168.1.0", "255.255.255.0" ) "192.168.1.5" == True
 
-    inSubnet ( "192.168.17.0", "255.255.254.0" ) "192.168.18.5" == False
+    included ( "192.168.17.0", "255.255.254.0" ) "192.168.18.5" == False
 
 -}
-inSubnet : ( String, String ) -> String -> Bool
-inSubnet ( lower, subnet ) ip =
+included : ( String, String ) -> String -> Bool
+included ( lower, subnet ) ip =
     let
         base_ =
             toInt (base ( lower, subnet ))
@@ -234,6 +246,6 @@ inSubnet ( lower, subnet ) ip =
             base_ + hosts subnet
 
         ip_ =
-            toInt ip
+            toInt (Just ip)
     in
     (base_ <= ip_) && (end_ >= ip_)
