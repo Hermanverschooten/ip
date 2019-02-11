@@ -1,8 +1,7 @@
 module Subnet exposing
     ( validate
     , fromCIDR, toCIDR
-    , base, hosts
-    , included
+    , base, hosts, included
     )
 
 {-| This library contains a number of functions for working with subnets.
@@ -18,7 +17,7 @@ It can validate subnet mask strings, see if an address is inside a given subnet.
 
 #Common functionality
 
-@docs base, hosts, inSubnet
+@docs base, hosts, included
 
 -}
 
