@@ -7,15 +7,18 @@ module Subnet exposing
 {-| This library contains a number of functions for working with subnets.
 It can validate subnet mask strings, see if an address is inside a given subnet.
 
-#Validation
+
+# Validation
 
 @docs validate
 
-#CIDR
+
+# CIDR
 
 @docs fromCIDR, toCIDR
 
-#Common functionality
+
+# Common functionality
 
 @docs base, hosts, included
 
@@ -137,11 +140,11 @@ toCIDR subnet =
 
 {-| Returns the base IP of the given subnet.
 
-    base ("192.168.1.25", "255.255.255.0") == Just "192.168.1.0"
+    base ( "192.168.1.25", "255.255.255.0" ) == Just "192.168.1.0"
 
-    base ("192.168.1.25:, "255.255.255.252") == Just "192.168.1.24"
+    base ( "192.168.1.25", "255.255.255.252" ) == Just "192.168.1.24"
 
-    base ("invalid ip", "or invalid subnet") == Nothing
+    base ( "invalid ip", "or invalid subnet" ) == Nothing
 
 -}
 base : ( String, String ) -> Maybe String

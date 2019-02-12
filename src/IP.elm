@@ -2,7 +2,8 @@ module IP exposing (validate)
 
 {-| This library allows you to validate a IP address.
 
-#Validation
+
+# Validation
 
 @docs validate
 
